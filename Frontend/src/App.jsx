@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/common/Navbar';
+import Footer from './components/common/Footer';
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import MyBookings from './pages/MyBookings';
 import './index.css';
 
 export default function App() {
@@ -17,11 +20,14 @@ export default function App() {
         <Navbar user={user} setUser={setUser} />
         <main className="flex-1">
           <Routes>
-            <Route path="/" element={<Dashboard user={user} />} />
+            <Route path="/" element={<Home user={user} />} />
+            <Route path="/booking" element={<Dashboard user={user} />} />
             <Route path="/login" element={<Login setUser={setUser} />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/my-bookings" element={<MyBookings user={user} />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   );

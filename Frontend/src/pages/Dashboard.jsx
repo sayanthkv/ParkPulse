@@ -25,19 +25,16 @@ export default function Dashboard({ user }) {
     return () => clearInterval(interval);
   }, []);
 
-  const handleBookSlot = async () => {
-    try {
-      const res = await API.post('/slots/book', {
-        slotId: selectedSlot._id,
-        durationHours: Number(duration),
-      });
-      setMessage(`✅ ${res.data.message}`);
-      setSelectedSlot(null);
-      fetchSlots();
-    } catch (err) {
-      setMessage(`❌ ${err.response?.data?.message || 'Booking failed'}`);
-    }
-  };
+ const handleBookSlot = async (bookingData) => {
+  try {
+    const res = await API.post('/slots/book', bookingData);
+    setMessage(`✅ ${res.data.message}`);
+    setSelectedSlot(null);
+    fetchSlots();
+  } catch (err) {
+    setMessage(`❌ ${err.response?.data?.message || 'Booking failed'}`);
+  }
+};
 
   const occupiedCount = slots.filter((s) => s.status === 'OCCUPIED').length;
   const reservedCount = slots.filter((s) => s.status === 'RESERVED').length;
@@ -88,12 +85,10 @@ export default function Dashboard({ user }) {
 
       {/* Booking Overlay Sheet */}
       <BookingModal
-        slot={selectedSlot}
-        duration={duration}
-        setDuration={setDuration}
-        onConfirm={handleBookSlot}
-        onClose={() => setSelectedSlot(null)}
-      />
+  slot={selectedSlot}
+  onConfirm={handleBookSlot}
+  onClose={() => setSelectedSlot(null)}
+/>
     </div>
   );
 }
