@@ -2,9 +2,18 @@ const Slot = require('../models/Slot');
 const Booking = require('../models/Booking');
 
 // GET /api/slots - Fetch all parking slots with current status
+// GET /api/slots?locationId=...
+// GET /api/slots?locationId=...
 exports.getSlots = async (req, res) => {
   try {
-    const slots = await Slot.find().sort({ slotNumber: 1 });
+    const { locationId } = req.query;
+
+    if (!locationId) {
+      return res.status(400).json({ message: 'Location ID is required to fetch slots.' });
+    }
+
+    // Strictly fetch slots belonging ONLY to this location
+    const slots = await Slot.find({ locationId }).sort({ slotNumber: 1 });
     res.status(200).json(slots);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching slots.', error: error.message });
@@ -108,79 +117,45 @@ exports.getUserBookings = async (req, res) => {
   }
 };
 // POST /api/slots/book - Reserve a parking slot with custom start/end times
+// POST /api/slots/book
 exports.bookSlot = async (req, res) => {
   try {
     const { slotId, startTime, endTime } = req.body;
-    const userId = req.user.userId;
-    const vehicleNumber = req.user.vehicleNumber;
-
-    if (!slotId || !startTime || !endTime) {
-      return res.status(400).json({ message: 'Slot ID, start time, and end time are required.' });
-    }
-
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const now = new Date();
-
-    // 1. Validate chronological order
-    if (start >= end) {
-      return res.status(400).json({ message: 'End time must be after start time.' });
-    }
-
-    if (start < new Date(now.getTime() - 5 * 60 * 1000)) { // 5-min grace window for clock drift
-      return res.status(400).json({ message: 'Start time cannot be in the past.' });
-    }
-
-    // 2. Enforce 3-day maximum booking window from right now
-    const maxBookingLimit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-    if (end > maxBookingLimit) {
-      return res.status(400).json({ message: 'Reservations cannot exceed 3 days from today.' });
-    }
-
-    // 3. Check slot existence & availability
+    
     const slot = await Slot.findById(slotId);
     if (!slot) {
       return res.status(404).json({ message: 'Parking slot not found.' });
     }
 
-    // Check for overlapping active bookings on this slot
-    const existingOverlappingBooking = await Booking.findOne({
-      slotId,
+    // Check overlapping bookings strictly for THIS slotId
+    const existingBooking = await Booking.findOne({
+      slotId: slot._id,
       status: { $in: ['BOOKED', 'ACTIVE'] },
-      $or: [
-        { startTime: { $lt: end }, endTime: { $gt: start } }
-      ]
+      $or: [{ startTime: { $lt: new Date(endTime) }, endTime: { $gt: new Date(startTime) } }]
     });
 
-    if (existingOverlappingBooking) {
+    if (existingBooking) {
       return res.status(400).json({ message: 'This slot is already reserved for the selected time window.' });
     }
 
-    // 4. Calculate total hours & base fee (₹50/hour, rounded up to full hours)
-    const durationMs = end - start;
-    const durationHours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
-    const baseFee = durationHours * 50;
+    // Lock ONLY this slot
+    slot.status = 'RESERVED';
+    await slot.save();
 
     const booking = new Booking({
-      userId,
-      slotId,
-      vehicleNumber,
-      startTime: start,
-      endTime: end,
-      baseFee,
+      userId: req.user.userId,
+      slotId: slot._id,
+      locationId: slot.locationId,
+      vehicleNumber: req.user.vehicleNumber,
+      startTime,
+      endTime,
+      baseFee: req.body.baseFee || 50,
       status: 'BOOKED'
     });
 
     await booking.save();
 
-    // Update slot status
-    slot.status = 'RESERVED';
-    await slot.save();
-
-    res.status(201).json({
-      message: `Slot ${slot.slotNumber} reserved successfully for ${durationHours} hour(s)!`,
-      booking
-    });
+    res.status(201).json({ message: `Slot ${slot.slotNumber} reserved successfully!`, booking });
   } catch (error) {
     res.status(500).json({ message: 'Error creating booking.', error: error.message });
   }

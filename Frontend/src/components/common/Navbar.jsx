@@ -15,67 +15,84 @@ export default function Navbar({ user, setUser }) {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="bg-[#0b0f17] border-b border-slate-800/80 sticky top-0 z-40">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-          <span className="text-base font-semibold text-white tracking-tight">ParkPulse</span>
+    <header className="absolute top-0 left-0 w-full z-50 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        
+        {/* Brand Logo */}
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-xl bg-red-600 flex items-center justify-center font-black text-white text-base shadow-lg shadow-red-600/40 group-hover:scale-105 transition-transform">
+            P
+          </div>
+          <span className="text-xl font-black text-white tracking-wider">
+            Park<span className="text-red-500">Pulse</span>
+          </span>
         </Link>
 
-        {/* Center Nav Links */}
-        <nav className="flex items-center gap-6 text-xs font-medium">
+        {/* Center Navigation Links */}
+        <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest">
           <Link
             to="/"
-            className={`transition ${isActive('/') ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+            className={`transition duration-200 drop-shadow-md ${
+              isActive('/') ? 'text-red-500 font-bold' : 'text-zinc-200 hover:text-white'
+            }`}
           >
             Home
           </Link>
           <Link
-            to="/booking"
-            className={`transition ${isActive('/booking') ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+            to="/locations"
+            className={`transition duration-200 drop-shadow-md ${
+              isActive('/locations') ? 'text-red-500 font-bold' : 'text-zinc-200 hover:text-white'
+            }`}
           >
-            Book Slot
+            Locations
           </Link>
           {user && (
-  <Link
-    to="/my-bookings"
-    className={`transition ${isActive('/my-bookings') ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-  >
-    My Bookings
-  </Link>
-)}
+            <Link
+              to="/my-bookings"
+              className={`transition duration-200 drop-shadow-md ${
+                isActive('/my-bookings') ? 'text-red-500 font-bold' : 'text-zinc-200 hover:text-white'
+              }`}
+            >
+              My Passes
+            </Link>
+          )}
         </nav>
 
-        {/* Right Auth Action */}
-        <div className="flex items-center gap-4">
+        {/* Auth Action Buttons */}
+        <div>
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs font-medium text-white">{user.name}</p>
-                <p className="text-[10px] font-mono text-slate-500">{user.vehicleNumber}</p>
-              </div>
+            <div className="flex items-center gap-4">
+              <span className="text-xs font-mono text-red-400 font-bold hidden sm:inline drop-shadow-md">
+                {user.name}
+              </span>
               <button
                 onClick={handleLogout}
-                className="text-xs text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-md transition"
+                className="text-xs font-bold uppercase tracking-wider text-white border border-white/20 hover:border-red-500 hover:bg-red-600/20 px-5 py-2.5 rounded-full transition backdrop-blur-xs cursor-pointer"
               >
                 Sign Out
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link to="/login" className="text-xs font-medium text-slate-400 hover:text-white transition">
+              {/* 🔑 Sign In Button */}
+              <Link
+                to="/login"
+                className="text-xs font-bold uppercase tracking-widest text-zinc-200 hover:text-white border border-white/20 bg-black/30 hover:bg-black/50 px-5 py-2.5 rounded-full transition duration-200 backdrop-blur-xs drop-shadow-md"
+              >
                 Sign In
               </Link>
-              <Link
-                to="/signup"
-                className="text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md transition"
+
+              {/* Primary Book Now Button */}
+              <button
+                onClick={() => navigate('/locations')}
+                className="text-xs font-bold uppercase tracking-widest text-white border border-red-500/80 bg-red-600/80 hover:bg-red-500 px-6 py-2.5 rounded-full transition duration-300 shadow-lg shadow-red-600/40 cursor-pointer"
               >
-                Register
-              </Link>
+                Book Now
+              </button>
             </div>
           )}
         </div>
+
       </div>
     </header>
   );
