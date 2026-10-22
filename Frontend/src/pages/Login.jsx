@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import API from '../api';
 
 export default function Login({ setUser }) {
@@ -7,6 +7,7 @@ export default function Login({ setUser }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -15,60 +16,53 @@ export default function Login({ setUser }) {
       localStorage.setItem('parkpulse_token', res.data.token);
       localStorage.setItem('parkpulse_user', JSON.stringify(res.data.user));
       setUser(res.data.user);
-      navigate('/locations');
+
+      // Redirect back to location or default to locations list
+      const redirectPath = location.state?.redirectedFrom || '/locations';
+      navigate(redirectPath, { state: location.state });
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password');
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] grid grid-cols-1 lg:grid-cols-2 bg-zinc-50">
-      {/* Left Column: Kannur Red Heritage Side */}
-      <div className="hidden lg:flex flex-col justify-between p-16 bg-gradient-to-br from-red-900 via-red-800 to-zinc-950 text-white relative overflow-hidden">
-        <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-red-600/20 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 space-y-4">
-          <span className="text-xs font-bold text-red-300 uppercase tracking-widest px-3 py-1 bg-red-950/60 border border-red-500/30 rounded-full inline-block">
-            Kannur Smart Parking Portal
-          </span>
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
-            Seamless Parking Across the Land of Theyyam.
-          </h1>
-          <p className="text-red-100/80 text-sm leading-relaxed max-w-md">
-            Skip traffic delays near Stadium Road, Railway Terminal 2, and New Bus Stand. Reserve verified parking spots in advance.
-          </p>
-        </div>
+    <div className="relative min-h-screen text-white overflow-hidden flex items-center justify-center pt-24 pb-12 px-6 bg-zinc-950">
+      
+      {/* 🖼️ BLURRED KANNUR BACKDROP */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none scale-105 blur-sm opacity-90 transition-all duration-300"
+        style={{ backgroundImage: `url('/kannur-bg.jpg')` }}
+      />
 
-        <div className="relative z-10 space-y-3 border-t border-red-800/60 pt-6">
-          <p className="text-xs font-semibold uppercase text-red-300 tracking-wider">Serving Major Kannur Locations</p>
-          <div className="flex flex-wrap gap-2 text-[11px] font-medium text-red-100">
-            <span className="bg-red-950/80 px-2.5 py-1 rounded-md border border-red-700/50">Stadium Road</span>
-            <span className="bg-red-950/80 px-2.5 py-1 rounded-md border border-red-700/50">Railway East Side</span>
-            <span className="bg-red-950/80 px-2.5 py-1 rounded-md border border-red-700/50">New Bus Stand</span>
-            <span className="bg-red-950/80 px-2.5 py-1 rounded-md border border-red-700/50">Ashirvad Hub</span>
-          </div>
-        </div>
+      {/* Dark Overlay Mask */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80 pointer-events-none" />
 
-        <p className="text-xs text-red-300/60 relative z-10">© 2026 ParkPulse Kannur. Crafted for seamless travel.</p>
-      </div>
-
-      {/* Right Column: Light Minimal Form */}
-      <div className="flex items-center justify-center p-8 lg:p-16">
-        <div className="w-full max-w-sm space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold text-zinc-900 tracking-tight">Sign In to Your Account</h2>
-            <p className="text-xs text-zinc-500 mt-1">Access active parking reservations across Kannur</p>
+      <div className="relative z-10 w-full max-w-md my-auto">
+        {/* Glass Card */}
+        <div className="bg-black/50 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl space-y-6">
+          
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-red-500/40 bg-black/40 text-[10px] font-mono tracking-widest uppercase">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>DRIVER PORTAL</span>
+            </div>
+            <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">
+              Welcome <span className="text-red-500">Back</span>
+            </h1>
+            <p className="text-xs text-zinc-300 font-semibold drop-shadow-md">
+              Sign in to manage your active parking passes in Kannur
+            </p>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">
+            <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-200 text-xs font-medium text-center">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-200 font-bold mb-1.5 drop-shadow-md">
                 Email Address
               </label>
               <input
@@ -77,12 +71,12 @@ export default function Login({ setUser }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="driver@kannur.com"
-                className="w-full bg-white border border-zinc-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 rounded-lg px-3.5 py-2.5 text-zinc-900 text-sm outline-none transition"
+                className="w-full bg-black/50 border border-white/20 focus:border-red-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition placeholder:text-zinc-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-200 font-bold mb-1.5 drop-shadow-md">
                 Password
               </label>
               <input
@@ -91,26 +85,28 @@ export default function Login({ setUser }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white border border-zinc-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 rounded-lg px-3.5 py-2.5 text-zinc-900 text-sm outline-none transition"
+                className="w-full bg-black/50 border border-white/20 focus:border-red-500 rounded-xl px-4 py-3 text-white text-xs outline-none transition placeholder:text-zinc-500"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg text-xs tracking-wider uppercase transition shadow-sm shadow-red-600/20"
+              className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest transition duration-200 shadow-lg shadow-red-600/40 cursor-pointer"
             >
               Sign In
             </button>
           </form>
 
-          <p className="text-center text-xs text-zinc-500">
-            Need a driver account?{' '}
-            <Link to="/signup" className="text-red-600 hover:text-red-700 font-semibold underline underline-offset-4">
-              Register vehicle
+          <p className="text-center text-xs text-zinc-300 font-semibold drop-shadow-md">
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-red-400 hover:text-red-300 font-bold underline underline-offset-4">
+              Register Vehicle
             </Link>
           </p>
+
         </div>
       </div>
+
     </div>
   );
 }

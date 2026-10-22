@@ -1,77 +1,114 @@
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 
 export default function BookingConfirmation() {
   const { state } = useLocation();
+  const navigate = useNavigate();
+
   const booking = state?.booking;
   const location = state?.location;
 
   if (!booking) {
     return (
-      <div className="max-w-md mx-auto my-16 p-8 text-center bg-[#131b2a] border border-slate-800 rounded-xl">
-        <p className="text-xs text-slate-400">No active booking details found.</p>
-        <Link to="/locations" className="text-blue-400 text-xs font-medium mt-4 inline-block">Return to Locations</Link>
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-white px-6">
+        <p className="text-zinc-400 font-mono text-xs mb-4">No active pass details found.</p>
+        <Link to="/locations" className="bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider">
+          Return to Hubs
+        </Link>
       </div>
     );
   }
 
-  // QR Payload string for gate scanning
-  const qrData = JSON.stringify({
-    bookingId: booking._id,
-    vehicleNumber: booking.vehicleNumber,
-    location: location?.name
-  });
+  const passId = booking._id || 'PKP-8821';
+  const slotNum = booking.slotNumber || booking.slotId?.slotNumber || 'P1';
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+    `PARKPULSE-PASS:${passId}-BAY:${slotNum}`
+  )}&color=ffffff&bgcolor=18181b`;
 
   return (
-    <div className="max-w-md mx-auto my-10 px-4">
-      <div className="bg-[#131b2a] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xl">
-        <div className="text-center space-y-1">
-          <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block mb-1 animate-pulse"></span>
-          <h2 className="text-lg font-bold text-white tracking-tight">Booking Confirmed</h2>
-          <p className="text-xs text-slate-400">Kannur Smart Parking Access Pass</p>
+    <div className="relative min-h-screen text-white overflow-hidden flex flex-col justify-between pt-28 pb-12 px-6 bg-zinc-950">
+      
+      {/* Blurred Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none scale-105 blur-sm opacity-90 transition-all duration-300"
+        style={{ backgroundImage: `url('/kannur-bg.jpg')` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80 pointer-events-none" />
+
+      <div className="relative z-10 max-w-md mx-auto w-full my-auto space-y-6">
+        
+        {/* Pass Card Container */}
+        <div className="bg-black/60 backdrop-blur-md border border-white/20 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+          
+          <div className="space-y-1">
+            <span className="text-[10px] font-mono tracking-widest uppercase text-red-400 font-bold">
+              DIGITAL ENTRY PASS
+            </span>
+            <h1 className="text-3xl font-black text-white tracking-tight">Booking Confirmed</h1>
+            <p className="text-xs text-zinc-300 font-semibold">{location?.name || 'Kannur Parking Hub'}</p>
+          </div>
+
+          {/* 📲 BARRIER SCAN QR CODE */}
+          <div className="bg-zinc-900/90 border border-white/20 p-4 rounded-2xl flex flex-col items-center justify-center space-y-2 max-w-[200px] mx-auto shadow-inner">
+            <img 
+              src={qrUrl} 
+              alt="Parking Pass QR Code" 
+              className="w-32 h-32 rounded-lg border border-white/10"
+            />
+            <span className="text-[9px] font-mono tracking-widest text-zinc-400 uppercase">
+              SCAN AT BOOTH BARRIER
+            </span>
+          </div>
+
+          {/* Pass Details Box */}
+          <div className="bg-black/50 border border-white/10 rounded-2xl p-5 space-y-3.5 text-left font-mono text-xs">
+            <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+              <span className="text-zinc-400 uppercase text-[10px]">Pass ID</span>
+              <span className="font-bold text-white uppercase">{passId.slice(-8)}</span>
+            </div>
+
+            <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+              <span className="text-zinc-400 uppercase text-[10px]">Bay Number</span>
+              <span className="font-black text-red-500 text-base">{slotNum}</span>
+            </div>
+
+            <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+              <span className="text-zinc-400 uppercase text-[10px]">Vehicle No</span>
+              <span className="font-bold text-white uppercase">{booking.vehicleNumber || 'KL-13-AB-1234'}</span>
+            </div>
+
+            <div className="flex justify-between items-center pt-0.5">
+              <span className="text-zinc-400 uppercase text-[10px]">Total Paid</span>
+              <span className="font-black text-white text-base">₹{booking.baseFee || 25}</span>
+            </div>
+          </div>
+
+          <div className="pt-2 space-y-3">
+            <button
+              onClick={() => navigate('/my-bookings')}
+              className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest transition shadow-lg shadow-red-600/40 cursor-pointer"
+            >
+              View My Passes →
+            </button>
+            <button
+              onClick={() => navigate('/locations')}
+              className="w-full bg-black/40 hover:bg-black/70 border border-white/20 text-zinc-300 font-bold py-3 rounded-xl text-xs uppercase tracking-widest transition cursor-pointer"
+            >
+              Book Another Slot
+            </button>
+          </div>
+
         </div>
 
-        {/* QR Code Pass */}
-        <div className="bg-white p-4 rounded-xl flex justify-center w-fit mx-auto shadow-inner">
-          <QRCodeSVG value={qrData} size={160} />
-        </div>
-
-        {/* Details Breakdown */}
-        <div className="space-y-3 border-t border-slate-800/80 pt-4 text-xs">
-          <div className="flex justify-between">
-            <span className="text-slate-400">Location</span>
-            <span className="text-white font-semibold text-right max-w-[200px]">{location?.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Address</span>
-            <span className="text-slate-300 font-mono text-right max-w-[200px]">{location?.address}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Vehicle Number</span>
-            <span className="text-blue-400 font-mono font-bold">{booking.vehicleNumber}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Start Time</span>
-            <span className="text-slate-200">{new Date(booking.startTime).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">End Time</span>
-            <span className="text-slate-200">{new Date(booking.endTime).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between border-t border-slate-800/80 pt-3 text-sm">
-            <span className="text-slate-300 font-medium">Paid Amount</span>
-            <span className="text-emerald-400 font-bold">₹{booking.baseFee}</span>
-          </div>
-        </div>
-
-        <Link
-          to="/my-bookings"
-          className="block text-center bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg text-xs transition"
-        >
-          View My Bookings
-        </Link>
       </div>
+
+      {/* Transparent Footer */}
+      <footer className="relative z-10 max-w-6xl mx-auto w-full text-center border-t border-white/20 pt-4 mt-8">
+        <p className="text-xs text-zinc-200 font-mono font-semibold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+          PARKPULSE PLATFORM • KANNUR CORPORATION & RAILWAY PARKING NETWORK
+        </p>
+      </footer>
+
     </div>
   );
 }

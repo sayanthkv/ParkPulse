@@ -1,144 +1,141 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../api';
 
 export default function MyBookings({ user }) {
   const [bookings, setBookings] = useState([]);
-  const [extendingBookingId, setExtendingBookingId] = useState(null);
-  const [extraHours, setExtraHours] = useState(1);
-  const [message, setMessage] = useState('');
-
-  const fetchUserBookings = async () => {
-    try {
-      const res = await API.get('/slots/my-bookings'); // We will ensure backend endpoint is mapped
-      setBookings(res.data);
-    } catch (err) {
-      console.error('Error fetching bookings:', err);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) fetchUserBookings();
-  }, [user]);
-
-  const handleExtend = async (bookingId) => {
-    try {
-      const res = await API.post('/slots/extend', {
-        bookingId,
-        additionalHours: Number(extraHours)
-      });
-      setMessage(`✅ ${res.data.message}`);
-      setExtendingBookingId(null);
-      fetchUserBookings();
-    } catch (err) {
-      setMessage(`❌ ${err.response?.data?.message || 'Extension failed'}`);
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  };
 
-  if (!user) {
-    return (
-      <div className="max-w-4xl mx-auto px-6 py-16 text-center space-y-4">
-        <h2 className="text-xl font-bold text-white">Sign In Required</h2>
-        <p className="text-xs text-slate-400">Please log in to view your parking history and active reservations.</p>
-      </div>
-    );
-  }
+    const fetchMyBookings = async () => {
+      try {
+        const res = await API.get('/slots/my-bookings');
+        setBookings(res.data);
+      } catch (err) {
+        console.error('Error loading bookings:', err);
+        setError(err.response?.data?.message || 'Failed to fetch passes.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyBookings();
+  }, [user, navigate]);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-white tracking-tight">My Reservations</h1>
-        <p className="text-xs text-slate-400 mt-1">Manage active sessions and view past parking history</p>
-      </div>
+    <div className="relative min-h-screen text-white overflow-hidden flex flex-col justify-between pt-28 pb-8 px-6 bg-zinc-950">
+      
+      {/* Blurred Kannur Backdrop */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none scale-105 blur-sm opacity-90 transition-all duration-300"
+        style={{ backgroundImage: `url('/kannur-bg.jpg')` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80 pointer-events-none" />
 
-      {message && (
-        <div className="px-4 py-3 bg-[#131b2a] border border-slate-800 rounded-lg text-xs text-slate-300 flex justify-between items-center">
-          <span>{message}</span>
-          <button onClick={() => setMessage('')} className="text-slate-500 hover:text-white">Dismiss</button>
+      <div className="relative z-10 max-w-5xl mx-auto w-full space-y-8 my-auto">
+        
+        {/* Header */}
+        <div className="space-y-2 text-center sm:text-left">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-black/40 backdrop-blur-md text-[11px] font-mono tracking-widest uppercase shadow-xl">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-zinc-200 font-medium">DRIVER PASS MANAGEMENT</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-md">
+            My Active <span className="text-red-500">Passes</span>
+          </h1>
+          <p className="text-zinc-200 text-xs font-semibold">
+            Track and manage your parking reservations across Kannur hubs
+          </p>
         </div>
-      )}
 
-      {/* Bookings List */}
-      <div className="space-y-3">
-        {bookings.length === 0 ? (
-          <div className="p-8 text-center bg-[#131b2a] border border-slate-800/80 rounded-xl text-xs text-slate-500">
-            No active or past reservations found.
+        {error && (
+          <div className="p-4 bg-red-950/80 border border-red-500/50 rounded-2xl text-xs text-red-200 font-medium text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Bookings Grid */}
+        {loading ? (
+          <div className="py-20 text-center font-mono text-xs text-zinc-300 tracking-widest uppercase font-bold">
+            Loading active passes...
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="bg-black/50 backdrop-blur-md border border-white/20 rounded-3xl p-12 text-center space-y-4 shadow-2xl">
+            <p className="text-zinc-300 font-semibold text-sm">You have no active parking reservations.</p>
+            <button
+              onClick={() => navigate('/locations')}
+              className="bg-red-600 hover:bg-red-500 text-white font-black px-8 py-3 rounded-xl text-xs uppercase tracking-widest transition shadow-lg shadow-red-600/40 cursor-pointer"
+            >
+              Book Parking Hub Now →
+            </button>
           </div>
         ) : (
-          bookings.map((booking) => {
-            const isActive = booking.status === 'BOOKED' || booking.status === 'ACTIVE';
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {bookings.map((b) => {
+              const slotNum = b.slotNumber || b.slotId?.slotNumber || 'P1';
+              const hubName = b.slotId?.locationId?.name || 'Kannur Parking Hub';
+              const address = b.slotId?.locationId?.address || 'Kannur, Kerala';
+              const passId = b._id ? b._id.slice(-8).toUpperCase() : 'PASS-OK';
 
-            return (
-              <div
-                key={booking._id}
-                className="bg-[#131b2a] border border-slate-800/80 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-white">
-                      Slot {booking.slotId?.slotNumber || 'Reserved'}
-                    </span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
-                      isActive ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-slate-800 text-slate-400'
-                    }`}>
-                      {booking.status}
+              return (
+                <div
+                  key={b._id}
+                  className="bg-black/50 backdrop-blur-md border border-white/20 rounded-2xl p-6 space-y-4 shadow-2xl hover:border-red-500/60 transition"
+                >
+                  <div className="flex items-start justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <h3 className="font-bold text-white text-base">
+                        {hubName}
+                      </h3>
+                      <p className="text-[11px] text-zinc-400 font-mono">
+                        📍 {address}
+                      </p>
+                    </div>
+                    <span className="bg-red-600/80 border border-red-400/50 text-white text-xs font-mono font-bold px-3 py-1 rounded-full uppercase">
+                      Bay {slotNum}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    Vehicle: <span className="font-mono text-slate-300">{booking.vehicleNumber}</span> • Base Fee: <span className="text-white font-semibold">₹{booking.baseFee}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    End Time: {new Date(booking.endTime).toLocaleString()}
-                  </p>
-                </div>
 
-                {isActive && (
-                  <button
-                    onClick={() => setExtendingBookingId(booking._id)}
-                    className="text-xs font-medium bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 px-3.5 py-2 rounded-lg transition self-start md:self-auto"
-                  >
-                    Extend Time
-                  </button>
-                )}
-              </div>
-            );
-          })
+                  <div className="grid grid-cols-2 gap-3 font-mono text-xs text-zinc-300">
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block uppercase">Pass ID</span>
+                      <span className="font-bold text-white uppercase">{passId}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block uppercase">Fee Paid</span>
+                      <span className="font-bold text-white">₹{b.baseFee || 25}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block uppercase">Vehicle</span>
+                      <span className="font-bold text-white uppercase">{b.vehicleNumber || 'KL-13'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block uppercase">Status</span>
+                      <span className="font-bold text-emerald-400 uppercase">{b.status || 'BOOKED'}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
+
       </div>
 
-      {/* Extension Modal */}
-      {extendingBookingId && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-[#131b2a] border border-slate-800 rounded-xl p-6 w-full max-w-sm space-y-4">
-            <h3 className="text-sm font-bold text-white">Extend Parking Session</h3>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1.5">Additional Hours</label>
-              <input
-                type="number"
-                min="1"
-                max="6"
-                value={extraHours}
-                onChange={(e) => setExtraHours(e.target.value)}
-                className="w-full bg-[#0b0f17] border border-slate-800 rounded-lg px-3.5 py-2 text-white text-sm outline-none"
-              />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => handleExtend(extendingBookingId)}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-xs transition"
-              >
-                Confirm Extension
-              </button>
-              <button
-                onClick={() => setExtendingBookingId(null)}
-                className="px-4 border border-slate-800 text-slate-400 hover:text-white rounded-lg text-xs transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <footer className="relative z-10 max-w-6xl mx-auto w-full text-center border-t border-white/20 pt-4 mt-8">
+        <p className="text-xs text-zinc-200 font-mono font-semibold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+          PARKPULSE PLATFORM • KANNUR CORPORATION & RAILWAY PARKING NETWORK
+        </p>
+      </footer>
+
     </div>
   );
 }

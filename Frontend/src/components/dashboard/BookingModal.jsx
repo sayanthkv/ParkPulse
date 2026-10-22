@@ -1,122 +1,119 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 export default function BookingModal({ slot, onConfirm, onClose }) {
+  const [hours, setHours] = useState(1);
+
   if (!slot) return null;
 
-  // Helper to format Date into 'YYYY-MM-DDTHH:mm' for datetime-local inputs
-  const formatForInput = (date) => {
-    const tzOffset = date.getTimezoneOffset() * 60000;
-    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
-  };
+  // src/components/dashboard/BookingModal.jsx
+const handleSubmit = (e) => {
+  e.preventDefault();
+  
+  // Make sure durationHours is passed explicitly as a number
+  onConfirm({ 
+    slotId: slot._id, 
+    durationHours: Number(hours) || 1 
+  });
+};
+  const baseRate = slot.locationId?.baseRate || 25;
+  const totalFee = baseRate * hours;
 
+  // Real-time calculated end time display
   const now = new Date();
-  const defaultEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000); // Default 2-hour window
-  const maxLimit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days max
-
-  const minDateTimeStr = formatForInput(now);
-  const maxDateTimeStr = formatForInput(maxLimit);
-
-  const [startTime, setStartTime] = useState(minDateTimeStr);
-  const [endTime, setEndTime] = useState(formatForInput(defaultEnd));
-  const [totalFee, setTotalFee] = useState(100);
-  const [error, setError] = useState('');
-
-  // Recalculate fee on date/time change
-  useEffect(() => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-
-    if (start >= end) {
-      setError('End time must be after start time.');
-      setTotalFee(0);
-      return;
-    }
-
-    if (end > maxLimit) {
-      setError('Reservations cannot extend beyond 3 days from today.');
-      setTotalFee(0);
-      return;
-    }
-
-    setError('');
-    const durationMs = end - start;
-    const hours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
-    setTotalFee(hours * 50);
-  }, [startTime, endTime]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (error) return;
-    onConfirm({
-      slotId: slot._id,
-      startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
-    });
-  };
+  const endTimeCalculated = new Date(now.getTime() + hours * 60 * 60 * 1000);
+  const formattedEndTime = endTimeCalculated.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-[#131b2a] border border-slate-800 rounded-xl p-6 w-full max-w-sm space-y-5">
-        <div>
-          <h3 className="text-base font-bold text-white">Reserve Bay {slot.slotNumber}</h3>
-          <p className="text-xs text-slate-400 mt-1">Select date & time (up to 3 days in advance)</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="relative w-full max-w-md bg-black/60 border border-white/20 rounded-3xl p-8 shadow-2xl space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-white/10 pb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/40 bg-black/40 text-[10px] font-mono tracking-widest uppercase mb-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>BAY RESERVATION</span>
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight">
+              Reserve Bay <span className="text-red-500">{slot.slotNumber}</span>
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-zinc-400 hover:text-white font-mono text-lg transition p-1 cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
 
-        {error && (
-          <div className="p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-medium">
-            {error}
+        {/* Slot Info Grid */}
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="bg-black/40 border border-white/10 p-3 rounded-xl">
+            <span className="text-zinc-400 font-mono text-[10px] uppercase block">Hub</span>
+            <span className="font-bold text-white truncate block">{slot.locationId?.name || 'Kannur Hub'}</span>
           </div>
-        )}
+          <div className="bg-black/40 border border-white/10 p-3 rounded-xl">
+            <span className="text-zinc-400 font-mono text-[10px] uppercase block">Valid Until</span>
+            <span className="font-bold text-emerald-400 block font-mono">{formattedEndTime}</span>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Duration Selection Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Start Time</label>
-            <input
-              type="datetime-local"
-              required
-              min={minDateTimeStr}
-              max={maxDateTimeStr}
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full bg-[#0b0f17] border border-slate-800 rounded-lg px-3.5 py-2 text-white text-xs outline-none focus:border-blue-500"
-            />
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-200 font-bold mb-2">
+              Duration (Hours)
+            </label>
+            <div className="flex items-center gap-2.5">
+              {[1, 2, 4, 8, 12].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => setHours(num)}
+                  className={`flex-1 py-2.5 rounded-xl font-mono text-xs font-bold transition border cursor-pointer ${
+                    hours === num
+                      ? 'bg-red-600 text-white border-red-500 shadow-lg shadow-red-600/40'
+                      : 'bg-black/40 text-zinc-300 border-white/10 hover:border-white/30'
+                  }`}
+                >
+                  {num}h
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">End Time</label>
-            <input
-              type="datetime-local"
-              required
-              min={startTime}
-              max={maxDateTimeStr}
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full bg-[#0b0f17] border border-slate-800 rounded-lg px-3.5 py-2 text-white text-xs outline-none focus:border-blue-500"
-            />
+          {/* Fee Calculation */}
+          <div className="bg-black/50 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
+            <div>
+              <span className="text-xs text-zinc-300 font-medium block">Total Estimate</span>
+              <span className="text-[10px] text-zinc-400 font-mono">₹{baseRate} × {hours} hrs</span>
+            </div>
+            <span className="text-2xl font-black font-mono text-white drop-shadow-md">
+              ₹{totalFee}
+            </span>
           </div>
 
-          <div className="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-            <span>Calculated Fee (₹50/hr)</span>
-            <span className="text-sm font-bold text-white">₹{totalFee}</span>
-          </div>
-
-          <div className="flex gap-2.5 pt-2">
-            <button
-              type="submit"
-              disabled={Boolean(error)}
-              className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium py-2 rounded-lg text-xs transition"
-            >
-              Confirm Booking
-            </button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 border border-slate-800 text-slate-400 hover:text-white rounded-lg text-xs transition"
+              className="flex-1 py-3 bg-black/40 hover:bg-black/70 border border-white/20 text-zinc-300 font-bold rounded-xl text-xs uppercase tracking-wider transition cursor-pointer"
             >
               Cancel
             </button>
+            <button
+              type="submit"
+              className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-red-600/40 cursor-pointer"
+            >
+              Confirm Booking
+            </button>
           </div>
         </form>
+
       </div>
     </div>
   );

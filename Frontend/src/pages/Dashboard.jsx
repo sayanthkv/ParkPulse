@@ -41,20 +41,20 @@ export default function Dashboard({ user }) {
   }, [currentLocation]);
 
   const handleBookSlot = async (bookingData) => {
-    try {
-      const res = await API.post('/slots/book', bookingData);
-      setSelectedSlot(null);
-      navigate('/confirmation', {
-        state: {
-          booking: res.data.booking,
-          location: currentLocation,
-        },
-      });
-    } catch (err) {
-      setMessage(`❌ ${err.response?.data?.message || 'Booking failed'}`);
-    }
-  };
-
+  try {
+    // bookingData MUST be { slotId: '...', durationHours: 1 }
+    const res = await API.post('/slots/book', bookingData);
+    setSelectedSlot(null);
+    navigate('/confirmation', {
+      state: {
+        booking: res.data.booking,
+        location: currentLocation,
+      },
+    });
+  } catch (err) {
+    setMessage(`❌ ${err.response?.data?.message || 'Booking failed'}`);
+  }
+};
   const occupiedCount = slots.filter((s) => s.status === 'OCCUPIED').length;
   const reservedCount = slots.filter((s) => s.status === 'RESERVED').length;
   const availableCount = slots.filter((s) => s.status === 'AVAILABLE').length;
