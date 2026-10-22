@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../api';
+import AuthLayout from '../components/auth/AuthLayout';
+import FormInput from '../components/common/FormInput';
 
 export default function Signup() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '', vehicleNumber: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    vehicleNumber: '',
+  });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -15,31 +24,74 @@ export default function Signup() {
       await API.post('/auth/register', formData);
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed.');
+      setError(err.response?.data?.message || 'Registration failed');
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="glass-panel auth-card">
-        <h2 style={{ margin: '0 0 8px 0', fontSize: '1.8rem' }}>Create Account</h2>
-        <p style={{ color: '#94a3b8', marginTop: 0, marginBottom: '24px' }}>Register your vehicle for instant smart parking</p>
+    <AuthLayout
+      badgeText="Driver Registration"
+      heroText="Register your vehicle for automated ANPR gate access."
+      title="Create Account"
+      subtitle="Enter details to setup smart parking credentials"
+    >
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs">
+          {error}
+        </div>
+      )}
 
-        {error && <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
+      <form onSubmit={handleSignup} className="space-y-4">
+        <FormInput
+          label="Full Name"
+          name="name"
+          placeholder="e.g. Sayanth Sajeevan"
+          onChange={handleChange}
+        />
+        <FormInput
+          label="Email Address"
+          name="email"
+          type="email"
+          placeholder="e.g. name@company.com"
+          onChange={handleChange}
+        />
+        <FormInput
+          label="Password"
+          name="password"
+          type="password"
+          placeholder="Enter a strong password"
+          autoComplete="new-password"
+          onChange={handleChange}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <FormInput
+            label="Phone Number"
+            name="phone"
+            placeholder="e.g. 9876543210"
+            onChange={handleChange}
+          />
+          <FormInput
+            label="Vehicle Number"
+            name="vehicleNumber"
+            placeholder="e.g. KL-11-AB-1234"
+            onChange={handleChange}
+          />
+        </div>
 
-        <form onSubmit={handleSignup}>
-          <div className="input-group"><label>Full Name</label><input className="input-field" name="name" type="text" placeholder="Sayanth Sajeevan" onChange={handleChange} required /></div>
-          <div className="input-group"><label>Email Address</label><input className="input-field" name="email" type="email" placeholder="sayanth@example.com" onChange={handleChange} required /></div>
-          <div className="input-group"><label>Password</label><input className="input-field" name="password" type="password" placeholder="••••••••" onChange={handleChange} required /></div>
-          <div className="input-group"><label>Phone Number</label><input className="input-field" name="phone" type="text" placeholder="9876543210" onChange={handleChange} required /></div>
-          <div className="input-group"><label>Vehicle Number</label><input className="input-field" name="vehicleNumber" type="text" placeholder="KL-11-AB-1234" onChange={handleChange} required /></div>
-          <button className="btn-modern" type="submit">Complete Registration</button>
-        </form>
+        <button
+          type="submit"
+          className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg text-xs tracking-wider uppercase transition shadow-md shadow-blue-600/20"
+        >
+          Complete Registration
+        </button>
+      </form>
 
-        <p style={{ textAlign: 'center', color: '#94a3b8', marginTop: '20px', fontSize: '0.9rem' }}>
-          Already have an account? <Link to="/login" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: '600' }}>Sign in</Link>
-        </p>
-      </div>
-    </div>
+      <p className="text-center text-xs text-slate-500">
+        Already registered?{' '}
+        <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

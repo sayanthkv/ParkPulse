@@ -6,7 +6,7 @@ const API = axios.create({
 
 // Automatically attach JWT token to protected requests
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('parkpulse_token');
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
   }
