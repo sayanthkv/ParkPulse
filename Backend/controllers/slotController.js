@@ -57,3 +57,41 @@ exports.bookSlot = async (req, res) => {
     res.status(500).json({ message: 'Error creating booking.', error: error.message });
   }
 };
+// POST /api/slots/extend - Extend an existing booking duration
+exports.extendBooking = async (req, res) => {
+  try {
+    const { bookingId, additionalHours } = req.body;
+
+    if (!bookingId || !additionalHours) {
+      return res.status(400).json({ message: 'Booking ID and additional hours are required.' });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    if (booking.status === 'COMPLETED' || booking.status === 'CANCELLED') {
+      return res.status(400).json({ message: 'Cannot extend a completed or cancelled booking.' });
+    }
+
+    // Calculate new end time and fee
+    const currentEndTime = new Date(booking.endTime);
+    const newEndTime = new Date(currentEndTime.getTime() + additionalHours * 60 * 60 * 1000);
+    const additionalFee = additionalHours * 50; // ₹50 per extra hour
+
+    booking.endTime = newEndTime;
+    booking.baseFee += additionalFee;
+    booking.reminderSent = false; // Reset so user receives a warning for the new end time
+    await booking.save();
+
+    res.status(200).json({
+      message: `Booking successfully extended by ${additionalHours} hour(s)!`,
+      newEndTime: booking.endTime,
+      updatedTotalFee: booking.baseFee,
+      booking
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error extending booking.', error: error.message });
+  }
+};

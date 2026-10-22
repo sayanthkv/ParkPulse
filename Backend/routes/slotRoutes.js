@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getSlots, bookSlot } = require('../controllers/slotController');
+const { getSlots, bookSlot, extendBooking } = require('../controllers/slotController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Public route to view live parking grid
 router.get('/', getSlots);
-
-// Protected route to book a slot (requires auth token)
 router.post('/book', authMiddleware, bookSlot);
+router.post('/extend', authMiddleware, extendBooking);
 
 module.exports = router;
