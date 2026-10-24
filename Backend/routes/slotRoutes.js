@@ -15,13 +15,14 @@ router.get('/', async (req, res) => {
 
     const slots = await Slot.find({ locationId }).sort({ slotNumber: 1 }).lean();
 
-    // Check active non-expired bookings to reflect true slot status
     const activeBookings = await Booking.find({
-      status: { $in: ['BOOKED', 'ACTIVE'] },
+      status: { $in: ['BOOKED', 'ACTIVE', 'Booked'] },
       endTime: { $gt: new Date() }
     }).lean();
 
-    const bookedSlotIds = new Set(activeBookings.map((b) => b.slotId.toString()));
+    const bookedSlotIds = new Set(
+      activeBookings.filter((b) => b.slotId).map((b) => b.slotId.toString())
+    );
 
     const updatedSlots = slots.map((slot) => ({
       ...slot,
@@ -35,7 +36,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 2. GET /api/slots/my-bookings -> Fetch driver passes with NESTED populate
+// 2. GET /api/slots/my-bookings -> Fetch driver passes
 router.get('/my-bookings', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?._id || req.user?.id || req.user?.userId;
@@ -44,8 +45,9 @@ router.get('/my-bookings', authMiddleware, async (req, res) => {
       return res.status(401).json({ message: 'User authorization required.' });
     }
 
-    // 🟢 Nested populate: slotId -> locationId
-    const bookings = await Booking.find({ userId })
+    const bookings = await Booking.find({
+      $or: [{ user: userId }, { userId: userId }]
+    })
       .populate({
         path: 'slotId',
         populate: { path: 'locationId' }
@@ -66,10 +68,72 @@ router.get('/my-bookings', authMiddleware, async (req, res) => {
 // 3. POST /api/slots/book -> Reserve parking bay
 router.post('/book', authMiddleware, async (req, res) => {
   try {
-    const { slotId, durationHours } = req.body;
+    const userId = req.user?._id || req.user?.id || req.user?.userId || req.body.userId;
+    const vehicleNumber = req.body.vehicleNumber || req.user?.vehicleNumber || 'KL-13-AB-1234';
 
+    if (!userId) {
+      return res.status(401).json({ message: 'User authorization required.' });
+    }
+
+    const {
+      slotId,
+      locationId,
+      locationName,
+      floorNumber,
+      bayNumber,
+      durationHours,
+      totalAmount,
+      bookingDate,
+    } = req.body;
+
+    // --- Custom Location, Floor & Bay Booking Flow ---
+    if (locationId && bayNumber) {
+      const parsedFloor = Number(floorNumber || 1);
+      const parsedBay = Number(bayNumber);
+
+      const existingBooking = await Booking.findOne({
+        locationId,
+        floorNumber: parsedFloor,
+        bayNumber: parsedBay,
+        status: { $in: ['BOOKED', 'Booked', 'ACTIVE'] },
+      });
+
+      if (existingBooking) {
+        return res.status(400).json({
+          message: `Bay B-${parsedBay} on Floor ${parsedFloor} is already booked!`,
+        });
+      }
+
+      const startTime = new Date();
+      const endTime = new Date(startTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours valid duration
+
+      const newBooking = new Booking({
+        user: userId,
+        userId: userId,
+        locationId,
+        locationName: locationName || 'Kannur Parking Hub',
+        floorNumber: parsedFloor,
+        bayNumber: parsedBay,
+        vehicleNumber: String(vehicleNumber).toUpperCase(),
+        bookingDate: bookingDate || new Date().toISOString().split('T')[0],
+        startTime: startTime,
+        endTime: endTime,
+        totalAmount: totalAmount || 100,
+        baseFee: totalAmount || 100,
+        status: 'Booked',
+      });
+
+      await newBooking.save();
+
+      return res.status(201).json({
+        message: `Bay B-${parsedBay} reserved successfully!`,
+        booking: newBooking,
+      });
+    }
+
+    // --- Legacy Slot ID Booking Flow ---
     if (!slotId) {
-      return res.status(400).json({ message: 'Slot ID is required.' });
+      return res.status(400).json({ message: 'Slot ID or Location/Bay details are required.' });
     }
 
     const slot = await Slot.findById(slotId).populate('locationId');
@@ -81,46 +145,41 @@ router.post('/book', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Selected slot is no longer available.' });
     }
 
-    // Safe duration calculation
     const hoursNum = parseInt(durationHours, 10);
-    const validHours = (!isNaN(hoursNum) && hoursNum > 0) ? hoursNum : 1;
+    const validHours = !isNaN(hoursNum) && hoursNum > 0 ? hoursNum : 1;
 
     const startTime = new Date();
     const endTime = new Date(startTime.getTime() + validHours * 60 * 60 * 1000);
-
-    const userId = req.user?._id || req.user?.id || req.user?.userId || req.body.userId;
-    const vehicleNumber = req.user?.vehicleNumber || req.body.vehicleNumber || 'KL-13-AB-1234';
-
-    if (!userId) {
-      return res.status(401).json({ message: 'User authorization required.' });
-    }
 
     const ratePerHour = slot.locationId?.baseRate || 25;
     const baseFee = ratePerHour * validHours;
 
     const newBooking = new Booking({
+      user: userId,
       userId,
       slotId: slot._id,
+      locationId: slot.locationId?._id || slot.locationId,
+      locationName: slot.locationId?.name || 'Kannur Parking Hub',
+      bayNumber: slot.slotNumber || 1,
       vehicleNumber: String(vehicleNumber).toUpperCase(),
       startTime,
       endTime,
       baseFee,
+      totalAmount: baseFee,
       penaltyFee: 0,
       status: 'BOOKED',
-      reminderSent: false
+      reminderSent: false,
     });
 
     await newBooking.save();
 
-    // Reserve slot
     slot.status = 'RESERVED';
     await slot.save();
 
     return res.status(201).json({
       message: `Slot ${slot.slotNumber} reserved successfully!`,
-      booking: newBooking
+      booking: newBooking,
     });
-
   } catch (error) {
     console.error('Error in /book:', error);
     return res.status(500).json({ message: 'Error creating booking.', error: error.message });

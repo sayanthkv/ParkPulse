@@ -17,7 +17,7 @@ export default function MyBookings({ user }) {
     const fetchMyBookings = async () => {
       try {
         const res = await API.get('/slots/my-bookings');
-        setBookings(res.data);
+        setBookings(res.data?.bookings || res.data || []);
       } catch (err) {
         console.error('Error loading bookings:', err);
         setError(err.response?.data?.message || 'Failed to fetch passes.');
@@ -80,48 +80,65 @@ export default function MyBookings({ user }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {bookings.map((b) => {
-              const slotNum = b.slotNumber || b.slotId?.slotNumber || 'P1';
-              const hubName = b.slotId?.locationId?.name || 'Kannur Parking Hub';
-              const address = b.slotId?.locationId?.address || 'Kannur, Kerala';
+              const locationName = b.locationName || b.slotId?.locationId?.name || 'Kannur Parking Hub';
+              const floorNumber = b.floorNumber || 1;
+              const bayNumber = b.bayNumber || b.slotNumber || 'P1';
+              const vehicleNumber = b.vehicleNumber || 'N/A';
+              const totalAmount = b.totalAmount || 0;
               const passId = b._id ? b._id.slice(-8).toUpperCase() : 'PASS-OK';
 
               return (
                 <div
                   key={b._id}
-                  className="bg-black/50 backdrop-blur-md border border-white/20 rounded-2xl p-6 space-y-4 shadow-2xl hover:border-red-500/60 transition"
+                  className="bg-black/60 backdrop-blur-md border border-white/20 rounded-2xl p-6 space-y-4 shadow-2xl hover:border-red-500/60 transition"
                 >
+                  {/* Card Header */}
                   <div className="flex items-start justify-between border-b border-white/10 pb-3">
                     <div>
                       <h3 className="font-bold text-white text-base">
-                        {hubName}
+                        {locationName}
                       </h3>
-                      <p className="text-[11px] text-zinc-400 font-mono">
-                        📍 {address}
+                      <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                        PASS ID: #{passId}
                       </p>
                     </div>
-                    <span className="bg-red-600/80 border border-red-400/50 text-white text-xs font-mono font-bold px-3 py-1 rounded-full uppercase">
-                      Bay {slotNum}
+                    <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[11px] font-mono font-bold px-3 py-1 rounded-full uppercase">
+                      Confirmed
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 font-mono text-xs text-zinc-300">
+                  {/* Booking Details Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/5 p-3.5 rounded-xl border border-white/10 text-xs">
                     <div>
-                      <span className="text-[10px] text-zinc-400 block uppercase">Pass ID</span>
-                      <span className="font-bold text-white uppercase">{passId}</span>
+                      <span className="block text-zinc-400 text-[10px] font-mono uppercase">Floor</span>
+                      <strong className="text-white text-sm font-bold">Floor {floorNumber}</strong>
                     </div>
+
                     <div>
-                      <span className="text-[10px] text-zinc-400 block uppercase">Fee Paid</span>
-                      <span className="font-bold text-white">₹{b.baseFee || 25}</span>
+                      <span className="block text-zinc-400 text-[10px] font-mono uppercase">Bay Number</span>
+                      <strong className="text-red-400 text-sm font-bold">Bay B-{bayNumber}</strong>
                     </div>
+
                     <div>
-                      <span className="text-[10px] text-zinc-400 block uppercase">Vehicle</span>
-                      <span className="font-bold text-white uppercase">{b.vehicleNumber || 'KL-13'}</span>
+                      <span className="block text-zinc-400 text-[10px] font-mono uppercase">Vehicle No.</span>
+                      <strong className="text-white text-sm font-bold">{vehicleNumber}</strong>
                     </div>
+
                     <div>
-                      <span className="text-[10px] text-zinc-400 block uppercase">Status</span>
-                      <span className="font-bold text-emerald-400 uppercase">{b.status || 'BOOKED'}</span>
+                      <span className="block text-zinc-400 text-[10px] font-mono uppercase">Total Paid</span>
+                      <strong className="text-emerald-400 text-sm font-bold">₹{totalAmount}</strong>
                     </div>
                   </div>
+
+                  {/* Date & Time Row */}
+                  {(b.bookingDate || b.startTime) && (
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono pt-1">
+                      <span>Date: {b.bookingDate || 'Today'}</span>
+                      {b.startTime && b.endTime && (
+                        <span>Time: {b.startTime} - {b.endTime}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

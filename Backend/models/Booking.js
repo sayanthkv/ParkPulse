@@ -1,55 +1,23 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const bookingSchema = new mongoose.Schema(
   {
-    userId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User', 
-      required: true 
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    locationId: { type: String, required: true },
+    locationName: { type: String, required: true },
+    floorNumber: { type: Number, default: 1 }, // Floor 1 to N
+    bayNumber: { type: Number, required: true },   // Bay 1 to N
+    vehicleNumber: { type: String, required: true },
+    startTime: { type: Date, required: true },
+    endTime: { type: Date, required: true },
+    totalAmount: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ["Booked", "Completed", "Cancelled"],
+      default: "Booked",
     },
-    slotId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Slot', 
-      required: true 
-    },
-    vehicleNumber: { 
-      type: String, 
-      required: true, 
-      uppercase: true 
-    },
-    startTime: { 
-      type: Date, 
-      required: true 
-    },
-    endTime: { 
-      type: Date, 
-      required: true 
-    },
-    actualEntryTime: { 
-      type: Date 
-    },
-    actualExitTime: { 
-      type: Date 
-    },
-    baseFee: { 
-      type: Number, 
-      required: true 
-    },
-    penaltyFee: { 
-      type: Number, 
-      default: 0 
-    },
-    status: { 
-      type: String, 
-      enum: ['BOOKED', 'ACTIVE', 'COMPLETED', 'CANCELLED'], 
-      default: 'BOOKED' 
-    },
-    reminderSent: { 
-      type: Boolean, 
-      default: false 
-    }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Booking', bookingSchema);
+module.exports = mongoose.model("Booking", bookingSchema);
