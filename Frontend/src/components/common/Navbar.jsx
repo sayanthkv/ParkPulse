@@ -15,7 +15,7 @@ export default function Navbar({ user, setUser }) {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="absolute top-0 left-0 w-full z-50 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+    <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black/90 via-black/60 to-transparent backdrop-blur-xs">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         
         {/* Brand Logo */}
@@ -58,12 +58,12 @@ export default function Navbar({ user, setUser }) {
           )}
         </nav>
 
-        {/* Auth Action Buttons */}
+        {/* Auth Actions */}
         <div>
           {user ? (
             <div className="flex items-center gap-4">
               <span className="text-xs font-mono text-red-400 font-bold hidden sm:inline drop-shadow-md">
-                {user.name}
+                {user.name || 'Driver'}
               </span>
               <button
                 onClick={handleLogout}
@@ -74,15 +74,12 @@ export default function Navbar({ user, setUser }) {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              {/* 🔑 Sign In Button */}
               <Link
                 to="/login"
                 className="text-xs font-bold uppercase tracking-widest text-zinc-200 hover:text-white border border-white/20 bg-black/30 hover:bg-black/50 px-5 py-2.5 rounded-full transition duration-200 backdrop-blur-xs drop-shadow-md"
               >
                 Sign In
               </Link>
-
-              {/* Primary Book Now Button */}
               <button
                 onClick={() => navigate('/locations')}
                 className="text-xs font-bold uppercase tracking-widest text-white border border-red-500/80 bg-red-600/80 hover:bg-red-500 px-6 py-2.5 rounded-full transition duration-300 shadow-lg shadow-red-600/40 cursor-pointer"

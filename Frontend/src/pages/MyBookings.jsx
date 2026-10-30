@@ -84,7 +84,7 @@ export default function MyBookings({ user }) {
               const floorNumber = b.floorNumber || 1;
               const bayNumber = b.bayNumber || b.slotNumber || 'P1';
               const vehicleNumber = b.vehicleNumber || 'N/A';
-              const totalAmount = b.totalAmount || 0;
+              const totalAmount = b.totalAmount || b.baseFee || 0;
               const passId = b._id ? b._id.slice(-8).toUpperCase() : 'PASS-OK';
 
               return (
@@ -131,14 +131,12 @@ export default function MyBookings({ user }) {
                   </div>
 
                   {/* Date & Time Row */}
-                  {(b.bookingDate || b.startTime) && (
-                    <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono pt-1">
-                      <span>Date: {b.bookingDate || 'Today'}</span>
-                      {b.startTime && b.endTime && (
-                        <span>Time: {b.startTime} - {b.endTime}</span>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono pt-1">
+                    <span>Date: {b.bookingDate || 'Today'}</span>
+                    <span>
+                      Pass Valid: {b.startTime ? new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:00 AM'} - {b.endTime ? new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '06:00 PM'}
+                    </span>
+                  </div>
                 </div>
               );
             })}

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
+// Components
+import Navbar from "./components/common/Navbar";
+
 // Auth & Base Pages
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -17,28 +20,29 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [selectedBookingData, setSelectedBookingData] = useState(null);
 
-  // Load user session on mount
+  // Restore user session on mount/refresh
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    const storedUser = localStorage.getItem("parkpulse_user");
+    const storedToken = localStorage.getItem("parkpulse_token");
+
+    if (storedUser && storedToken) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (err) {
-        console.error("Failed to parse stored user session", err);
+        console.error("Failed to parse stored user session:", err);
+        localStorage.removeItem("parkpulse_user");
+        localStorage.removeItem("parkpulse_token");
       }
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-  };
-
   return (
     <Router>
+      {/* Global Navigation Bar */}
+      <Navbar user={user} setUser={setUser} />
+
       <Routes>
-        {/* Home & Public Routes */}
+        {/* Public Routes */}
         <Route path="/" element={<Home user={user} />} />
         
         <Route
@@ -54,13 +58,10 @@ export default function App() {
           element={!user ? <Signup setUser={setUser} /> : <Navigate to="/locations" replace />}
         />
 
-        {/* Locations List */}
-        <Route
-          path="/locations"
-          element={<Locations user={user} />}
-        />
+        {/* Locations Overview */}
+        <Route path="/locations" element={<Locations user={user} />} />
 
-        {/* Parking Location, Floor & Bay Selector */}
+        {/* Floor & Bay Slot Selector */}
         <Route
           path="/parking-selection"
           element={
@@ -77,7 +78,7 @@ export default function App() {
           }
         />
 
-        {/* Slot Confirmation & Payment Page */}
+        {/* Pass Confirmation Page */}
         <Route
           path="/confirm"
           element={
@@ -92,19 +93,19 @@ export default function App() {
           }
         />
 
-        {/* Driver Pass Management / My Bookings */}
+        {/* Driver Passes / My Bookings */}
         <Route
           path="/my-bookings"
-          element={<MyBookings user={user} onLogout={handleLogout} />}
+          element={user ? <MyBookings user={user} /> : <Navigate to="/login" replace />}
         />
 
-        {/* Dashboard */}
+        {/* Admin/User Dashboard */}
         <Route
           path="/dashboard"
           element={user ? <Dashboard user={user} /> : <Navigate to="/login" replace />}
         />
 
-        {/* Fallback Redirect */}
+        {/* Fallback Catch-All */}
         <Route path="*" element={<Navigate to={user ? "/locations" : "/login"} replace />} />
       </Routes>
     </Router>

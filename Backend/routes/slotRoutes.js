@@ -4,7 +4,7 @@ const Slot = require('../models/Slot');
 const Booking = require('../models/Booking');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// 1. GET /api/slots?locationId=... -> Fetch slots and overlay active bookings
+// 1. GET /api/slots - Fetch slots for location
 router.get('/', async (req, res) => {
   try {
     const { locationId } = req.query;
@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 2. GET /api/slots/my-bookings -> Fetch driver passes
+// 2. GET /api/slots/my-bookings - Fetch driver passes
 router.get('/my-bookings', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?._id || req.user?.id || req.user?.userId;
@@ -65,7 +65,7 @@ router.get('/my-bookings', authMiddleware, async (req, res) => {
   }
 });
 
-// 3. POST /api/slots/book -> Reserve parking bay
+// 3. POST /api/slots/book - Reserve parking bay
 router.post('/book', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?._id || req.user?.id || req.user?.userId || req.body.userId;
@@ -86,7 +86,7 @@ router.post('/book', authMiddleware, async (req, res) => {
       bookingDate,
     } = req.body;
 
-    // --- Custom Location, Floor & Bay Booking Flow ---
+    // Custom Location, Floor & Bay Booking Flow
     if (locationId && bayNumber) {
       const parsedFloor = Number(floorNumber || 1);
       const parsedBay = Number(bayNumber);
@@ -105,7 +105,7 @@ router.post('/book', authMiddleware, async (req, res) => {
       }
 
       const startTime = new Date();
-      const endTime = new Date(startTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours valid duration
+      const endTime = new Date(startTime.getTime() + 8 * 60 * 60 * 1000); // 8-hour pass validity
 
       const newBooking = new Booking({
         user: userId,
@@ -131,7 +131,7 @@ router.post('/book', authMiddleware, async (req, res) => {
       });
     }
 
-    // --- Legacy Slot ID Booking Flow ---
+    // Legacy Slot ID Booking Flow
     if (!slotId) {
       return res.status(400).json({ message: 'Slot ID or Location/Bay details are required.' });
     }

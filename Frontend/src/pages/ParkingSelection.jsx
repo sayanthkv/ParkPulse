@@ -6,7 +6,6 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
   const navigate = useNavigate();
   const locationState = useLocation().state;
 
-  // Pre-select location if passed from /locations page, or default to first location
   const [selectedLocation, setSelectedLocation] = useState(
     locationState?.location || PARKING_LOCATIONS[0]
   );
@@ -15,7 +14,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
   );
   const [selectedBay, setSelectedBay] = useState(null);
 
-  // Mock array for demonstration - connect to backend occupied bays API if needed
+  // Mock array for occupied slots; plug in live API if available
   const occupiedBays = [3, 7, 12, 18];
 
   const handleLocationSelect = (loc) => {
@@ -37,20 +36,18 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
       locationName: selectedLocation.name,
       floorNumber: selectedFloor,
       bayNumber: selectedBay,
-      totalAmount: 100, // Customize amount calculation as needed
+      totalAmount: 100,
     };
 
     if (onProceedToConfirm) {
       onProceedToConfirm(bookingPayload);
     }
 
-    // Navigate to confirmation page passing booking details in route state
     navigate("/confirm", { state: { bookingData: bookingPayload } });
   };
 
   return (
-    <div className="relative min-h-screen text-white bg-zinc-950 flex flex-col justify-between pt-24 pb-12 px-6">
-      {/* Background Overlay */}
+    <div className="relative min-h-screen text-white bg-zinc-950 flex flex-col justify-between pt-28 pb-12 px-6">
       <div
         className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-40 blur-sm"
         style={{ backgroundImage: `url('/kannur-bg.jpg')` }}
@@ -58,7 +55,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/90 pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto w-full space-y-8">
-        {/* Page Header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row items-center justify-between border-b border-white/10 pb-4 gap-4">
           <div>
             <span className="text-red-500 font-mono text-xs tracking-widest uppercase font-bold">
@@ -70,7 +67,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
           </div>
           <button
             onClick={() => navigate("/locations")}
-            className="text-xs font-mono text-zinc-400 hover:text-white border border-white/20 px-4 py-2 rounded-xl transition"
+            className="text-xs font-mono text-zinc-400 hover:text-white border border-white/20 px-4 py-2 rounded-xl transition cursor-pointer"
           >
             ← Back to Locations
           </button>
@@ -106,7 +103,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
           </div>
         </div>
 
-        {/* 2. Floor Selection (Only for Multi-Floor Facilities) */}
+        {/* 2. Floor Selection (Multi-Floor Facilities Only) */}
         {selectedLocation && selectedLocation.hasMultipleFloors && (
           <div>
             <h2 className="text-sm font-mono text-zinc-400 uppercase tracking-wider mb-3">
@@ -119,7 +116,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
                   <button
                     key={floor}
                     onClick={() => handleFloorSelect(floor)}
-                    className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition ${
+                    className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer ${
                       isSelected
                         ? "bg-red-600 text-white shadow-lg shadow-red-600/40"
                         : "bg-white/5 border border-white/10 text-zinc-300 hover:border-white/30"
@@ -163,7 +160,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
                     key={bay}
                     disabled={isOccupied}
                     onClick={() => setSelectedBay(bay)}
-                    className={`py-3 rounded-xl font-mono font-bold text-xs transition border ${
+                    className={`py-3 rounded-xl font-mono font-bold text-xs transition border cursor-pointer ${
                       isSelected
                         ? "bg-red-600 border-red-500 text-white shadow-lg shadow-red-600/50 scale-105"
                         : isOccupied
@@ -179,7 +176,7 @@ export default function ParkingSelection({ user, onProceedToConfirm }) {
           </div>
         )}
 
-        {/* 4. Slot Selection Confirmation Bar */}
+        {/* 4. Slot Selection Confirmation Banner */}
         {selectedLocation && selectedFloor && selectedBay && (
           <div className="bg-black/80 border border-red-500/50 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl backdrop-blur-md">
             <div>

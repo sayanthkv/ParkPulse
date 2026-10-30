@@ -19,7 +19,7 @@ export default function BookingConfirmation({ user, bookingData: propBookingData
           <p className="text-zinc-400">No slot selected.</p>
           <button
             onClick={() => navigate("/locations")}
-            className="bg-red-600 text-white px-6 py-2 rounded-xl text-xs font-bold"
+            className="bg-red-600 text-white px-6 py-2 rounded-xl text-xs font-bold cursor-pointer"
           >
             Go to Locations
           </button>
@@ -39,19 +39,15 @@ export default function BookingConfirmation({ user, bookingData: propBookingData
       setLoading(true);
       setError("");
 
-     const payload = {
-
-  slotId: booking.slotId || `${booking.locationId}-F${booking.floorNumber}-B${booking.bayNumber}`,
-  locationId: booking.locationId,
-  locationName: booking.locationName,
-  floorNumber: booking.floorNumber,
-  bayNumber: booking.bayNumber,
-  vehicleNumber: vehicleNumber.trim().toUpperCase(),
-  totalAmount: booking.totalAmount || 100,
-  bookingDate: new Date().toISOString().split("T")[0],
-  startTime: "10:00 AM",
-  endTime: "06:00 PM",
-};
+      const payload = {
+        locationId: booking.locationId,
+        locationName: booking.locationName,
+        floorNumber: booking.floorNumber,
+        bayNumber: booking.bayNumber,
+        vehicleNumber: vehicleNumber.trim().toUpperCase(),
+        totalAmount: booking.totalAmount || 100,
+        bookingDate: new Date().toISOString().split("T")[0],
+      };
 
       await API.post("/slots/book", payload);
       alert("Booking confirmed successfully!");
@@ -100,7 +96,7 @@ export default function BookingConfirmation({ user, bookingData: propBookingData
           </div>
         )}
 
-        {/* Vehicle Registration Input */}
+        {/* Vehicle Input Form */}
         <form onSubmit={handleConfirmBooking} className="space-y-4">
           <div>
             <label className="block text-xs font-mono text-zinc-400 uppercase mb-2">
@@ -119,7 +115,7 @@ export default function BookingConfirmation({ user, bookingData: propBookingData
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl text-xs uppercase tracking-widest transition shadow-lg shadow-red-600/40"
+            className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl text-xs uppercase tracking-widest transition shadow-lg shadow-red-600/40 cursor-pointer"
           >
             {loading ? "Processing..." : "Confirm & Pay Pass →"}
           </button>
