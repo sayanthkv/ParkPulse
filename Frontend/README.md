@@ -17,3 +17,4 @@ If you are developing a production application, we recommend using TypeScript wi
 
 
 project that is not completed
+project has been stopped and made a new version
